@@ -20,29 +20,291 @@
 <body class="bg-white">
   <div id="app" class="min-h-screen"></div>
   <script>
-    const BRAND_VOICE = {
-      'Social Media': { style: 'Conversational, engaging, approachable', voice: ['Friendly', 'Witty', 'Helpful'], use: 'discover, transform, empower', avoid: 'jargon, synergy, leverage' },
-      'PR News': { style: 'Professional, newsworthy, factual', voice: ['Authoritative', 'Clear', 'Credible'], use: 'announces, launches, partners', avoid: 'buzzwords, hype' },
-      'Thought Leadership': { style: 'Authoritative, insightful, forward-thinking', voice: ['Expert', 'Visionary', 'Trustworthy'], use: 'insights, innovation, strategy', avoid: 'maybe, possibly, basic' },
-      'Case Study': { style: 'Results-driven, specific, compelling', voice: ['Credible', 'Detailed', 'Persuasive'], use: 'achieved, improved, delivered', avoid: 'vague, unsubstantiated' },
-      'Newsletter': { style: 'Warm, informative, value-driven', voice: ['Personable', 'Helpful', 'Engaging'], use: 'you, discover, exclusive', avoid: 'spam triggers, clickbait' },
-      'Paid Media': { style: 'Concise, action-oriented, benefit-focused', voice: ['Direct', 'Compelling', 'Urgent'], use: 'get, start, discover, free', avoid: 'long sentences, weak CTAs' }
+    // Demo responses for each content type
+    const DEMO_RESPONSES = {
+      'Social Media': [
+        `Here's a social media post for you:
+
+✨ Transform your satisfaçtion into brand gold!
+
+Your brand isn't just a logo—it's a promise. Every touchpoint, every message, every interaction shapes how your audience sees you.
+
+Ready to create content that actually sounds like YOU? 
+
+Drop a 🙌 if you've ever struggled with keeping your brand voice consistent!
+
+#BrandStrategy #ContentCreation #MarketingTips #BrandVoice`,
+
+        `📣 New post ready for you:
+
+Stop explaining your brand to AI. Start creating.
+
+3 things your audience wants:
+→ Authenticity
+→ Consistency  
+→ Value
+
+Pablo delivers all three. Every. Single. Time.
+
+What's your biggest content challenge? 👇
+
+#ContentMarketing #BrandBuilding #AIContent`,
+
+        `Here's your social content:
+
+The secret to great content? 
+
+It's not about posting more.
+It's not about trending sounds.
+It's not about perfect timing.
+
+It's about sounding unmistakably YOU.
+
+Your brand voice is your superpower. Use it. 💪
+
+#BrandVoice #ContentStrategy #Marketing`
+      ],
+      'PR News': [
+        `FOR IMMEDIATE RELEASE
+
+[Company Name] Announces Revolutionary Approach to Brand Content Creation
+
+[City, Date] — [Company Name], a leader in brand innovation, today announced the launch of its new content creation initiative designed to streamline brand communications across all channels.
+
+"We're committed to delivering consistent, high-quality content that resonates with our audience," said [Spokesperson Name], [Title]. "This represents a significant step forward in how we engage with our community."
+
+Key highlights include:
+• Streamlined content production workflow
+• Enhanced brand consistency across platforms
+• Improved audience engagement metrics
+
+For more information, contact:
+[Contact Name]
+[Email]
+[Phone]
+
+###`,
+
+        `PRESS RELEASE
+
+[Company Name] Sets New Standard for Brand Excellence
+
+[City, Date] — In a move that signals its commitment to innovation, [Company Name] has unveiled a comprehensive strategy to elevate its brand presence in the market.
+
+The initiative focuses on three core pillars: authenticity, consistency, and customer connection.
+
+"Our brand is more than what we sell—it's who we are," noted [Executive Name]. "This initiative ensures every interaction reflects our values."
+
+About [Company Name]:
+[Brief company description]
+
+Media Contact:
+[Details]`
+      ],
+      'Thought Leadership': [
+        `# The Future of Brand Voice in an AI World
+
+The conversation around AI and content has missed something crucial.
+
+While everyone debates whether AI can write "good" content, they're asking the wrong question. The real question is: can AI write content that sounds unmistakably like YOUR brand?
+
+## The Consistency Challenge
+
+Every day, brands publish hundreds of pieces of content across dozens of channels. Each piece is an opportunity to reinforce—or dilute—their brand identity.
+
+The companies winning today aren't just creating more content. They're creating more *consistent* content. Content that builds recognition. Content that builds trust.
+
+## A New Paradigm
+
+The future belongs to brands that can scale their authentic voice without losing what makes them unique.
+
+This isn't about replacing human creativity. It's about amplifying it.
+
+What's your take on maintaining brand authenticity at scale?`,
+
+        `# Why Your Brand Manual Is Your Most Undervalued Asset
+
+Most companies treat their brand guidelines like a dusty rulebook—referenced occasionally, followed inconsistently.
+
+But here's what the best brands understand: your brand manual isn't a constraint. It's a competitive advantage.
+
+## The Hidden ROI
+
+When every piece of content aligns with your brand voice:
+- Recognition increases
+- Trust compounds
+- Conversion improves
+
+## The Execution Gap
+
+The challenge has never been knowing what your brand should sound like. It's executing that vision consistently across every touchpoint, every channel, every day.
+
+The brands that solve this gap will define the next decade of marketing.`
+      ],
+      'Case Study': [
+        `# Case Study: Transforming Brand Consistency at Scale
+
+## The Challenge
+
+A growing tech company faced a common problem: as their team expanded, their brand voice became fragmented. Different departments created content that barely seemed connected.
+
+## The Approach
+
+By implementing a centralized brand voice system, they:
+1. Documented their core voice attributes
+2. Created templates aligned with brand guidelines
+3. Established review workflows
+
+## The Results
+
+Within 90 days:
+- **47% increase** in brand recognition scores
+- **32% improvement** in content production speed
+- **3x reduction** in revision cycles
+
+## Key Takeaway
+
+"We went from chaos to consistency without sacrificing creativity. Our brand finally speaks with one voice."
+
+— Marketing Director`,
+
+        `# Client Success Story
+
+## Background
+A mid-size B2B company struggled with inconsistent messaging across their sales and marketing materials.
+
+## Solution
+Implemented a unified brand content approach:
+- Centralized voice guidelines
+- Templated content frameworks
+- Cross-team alignment sessions
+
+## Impact
+📈 Brand consistency score: +58%
+⏱️ Content creation time: -40%
+💰 Campaign performance: +27%
+
+## Client Quote
+"For the first time, our brand feels cohesive. Customers notice the difference."`
+      ],
+      'Newsletter': [
+        `Subject: The one thing your content is missing 👀
+
+Hey there,
+
+Quick question: When someone reads your content, can they tell it's from YOU without seeing your logo?
+
+If you hesitated, you're not alone.
+
+Most brands struggle with this. They create great content that could belong to anyone.
+
+Here's the fix:
+
+**1. Identify your verbal tics**
+What phrases do you naturally use? What words feel like home?
+
+**2. Define your "no" list**
+What would your brand NEVER say? Sometimes knowing what you're not is just as important.
+
+**3. Test the blindfold**
+Remove your branding from content. Can people still identify you?
+
+Your brand voice is your fingerprint. Make it unmistakable.
+
+Cheers,
+[Your Name]
+
+P.S. Hit reply and tell me—what's ONE word that defines your brand voice?`,
+
+        `Subject: Your weekly dose of brand brilliance ✨
+
+Happy [Day]!
+
+This week, I've been thinking about consistency.
+
+Not the boring kind. The powerful kind.
+
+The kind that makes people say "Oh, that's SO them" before they even see your name.
+
+**What I'm reading:**
+→ [Article about brand voice]
+
+**What I'm trying:**
+→ Auditing our last 10 posts for voice consistency
+
+**What I'm asking:**
+→ How do YOU maintain brand voice across your team?
+
+Reply and let me know. I read every response.
+
+Until next week,
+[Name]`
+      ],
+      'Paid Media': [
+        `**Primary Headlines:**
+• Your Brand Voice, Amplified
+• Content That Sounds Like You
+• Stop Briefing. Start Creating.
+
+**Descriptions:**
+• Generate on-brand content in seconds. No more explaining your voice to AI.
+• Finally—content that captures your brand perfectly. Every time.
+• Your brand manual + AI = unlimited on-brand content.
+
+**Call-to-Action Options:**
+→ Try Free
+→ See How It Works
+→ Get Early Access
+
+**Ad Copy Variations:**
+
+Version A:
+"Tired of AI that doesn't get your brand? Pablo learns your voice and creates content that's unmistakably you. Join the waitlist."
+
+Version B:
+"Your brand has a voice. Now it has a megaphone. Pablo turns your brand guidelines into unlimited on-brand content."
+
+Version C:
+"What if every piece of content sounded perfectly on-brand? With Pablo, it does. Try it free."`,
+
+        `**Google Ads Copy:**
+
+Headline 1: On-Brand Content, Instantly
+Headline 2: Your Voice, Amplified by AI
+Headline 3: Stop Rewriting. Start Scaling.
+
+Description 1: Upload your brand manual once. Generate perfectly aligned content forever. Try Pablo free.
+
+Description 2: AI that actually gets your brand. Create social posts, PR, and more—all in your voice.
+
+**Facebook/Instagram Ads:**
+
+Hook: "POV: You never have to explain your brand voice again"
+
+Body: Every piece of content. Every channel. Every time. Perfectly on-brand.
+
+Pablo learns your brand manual and creates content that sounds like you wrote it yourself.
+
+CTA: Join 2,800+ brands on the waitlist →`
+      ]
     };
-    let state = { contentType: 'Social Media', messages: [{ role: 'assistant', content: "Hi! I'm your brand content assistant. Select a content type and tell me what you'd like to create." }], input: '', loading: false };
-    
-    async function callClaude(userMessage) {
-      const voice = BRAND_VOICE[state.contentType];
-      const systemPrompt = `You are a brand content creator for ${state.contentType}. Style: ${voice.style}. Voice: ${voice.voice.join(', ')}. Use: ${voice.use}. Avoid: ${voice.avoid}. Create ready-to-use content.`;
-      const messages = state.messages.filter((m, i) => i > 0).slice(-10).concat([{ role: 'user', content: userMessage }]);
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4096, system: systemPrompt, messages })
-      });
-      if (!response.ok) throw new Error('API failed');
-      return (await response.json()).content[0].text;
+
+    let state = { 
+      contentType: 'Social Media', 
+      messages: [{ role: 'assistant', content: "Hi! I'm your brand content assistant. Select a content type and tell me what you'd like to create." }], 
+      input: '', 
+      loading: false,
+      responseIndex: {}
+    };
+
+    function getNextResponse(type) {
+      if (!state.responseIndex[type]) state.responseIndex[type] = 0;
+      const responses = DEMO_RESPONSES[type];
+      const response = responses[state.responseIndex[type] % responses.length];
+      state.responseIndex[type]++;
+      return response;
     }
-    
+
     async function sendMessage() {
       if (!state.input.trim() || state.loading) return;
       const userMessage = state.input;
@@ -50,12 +312,12 @@
       state.input = '';
       state.loading = true;
       render();
-      try {
-        const response = await callClaude(userMessage);
-        state.messages.push({ role: 'assistant', content: response });
-      } catch (e) {
-        state.messages.push({ role: 'assistant', content: 'Error: ' + e.message });
-      }
+      
+      // Simulate API delay
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
+      
+      const response = getNextResponse(state.contentType);
+      state.messages.push({ role: 'assistant', content: response });
       state.loading = false;
       render();
       document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
@@ -113,7 +375,7 @@
           <div class="bg-white border-t p-3">
             <div class="flex gap-2 mb-2">
               <input type="text" id="message-input" placeholder="Describe what content you need..." class="flex-1 px-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" value="${escapeHtml(state.input)}" ${state.loading ? 'disabled' : ''}/>
-              <button id="send-btn" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium disabled:bg-slate-300" ${state.loading || !state.input.trim() ? 'disabled' : ''}>Send</button>
+              <button id="send-btn" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium disabled:bg-slate-300" ${state.loading ? 'disabled' : ''}>Send</button>
             </div>
             <div class="flex gap-2">
               <button id="copy-btn" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1">
