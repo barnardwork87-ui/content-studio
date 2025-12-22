@@ -1,400 +1,360 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Content Studio</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .bounce-1 { animation: bounce 1s infinite; }
-    .bounce-2 { animation: bounce 1s infinite 0.1s; }
-    .bounce-3 { animation: bounce 1s infinite 0.2s; }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-  </style>
-</head>
-<body class="bg-white">
-  <div id="app" class="min-h-screen"></div>
-  <script>
-    // Demo responses for each content type
-    const DEMO_RESPONSES = {
-      'Social Media': [
-        `Here's a social media post for you:
-
-✨ Transform your satisfaçtion into brand gold!
-
-Your brand isn't just a logo—it's a promise. Every touchpoint, every message, every interaction shapes how your audience sees you.
-
-Ready to create content that actually sounds like YOU? 
-
-Drop a 🙌 if you've ever struggled with keeping your brand voice consistent!
-
-#BrandStrategy #ContentCreation #MarketingTips #BrandVoice`,
-
-        `📣 New post ready for you:
-
-Stop explaining your brand to AI. Start creating.
-
-3 things your audience wants:
-→ Authenticity
-→ Consistency  
-→ Value
-
-Pablo delivers all three. Every. Single. Time.
-
-What's your biggest content challenge? 👇
-
-#ContentMarketing #BrandBuilding #AIContent`,
-
-        `Here's your social content:
-
-The secret to great content? 
-
-It's not about posting more.
-It's not about trending sounds.
-It's not about perfect timing.
-
-It's about sounding unmistakably YOU.
-
-Your brand voice is your superpower. Use it. 💪
-
-#BrandVoice #ContentStrategy #Marketing`
-      ],
-      'PR News': [
-        `FOR IMMEDIATE RELEASE
-
-[Company Name] Announces Revolutionary Approach to Brand Content Creation
-
-[City, Date] — [Company Name], a leader in brand innovation, today announced the launch of its new content creation initiative designed to streamline brand communications across all channels.
-
-"We're committed to delivering consistent, high-quality content that resonates with our audience," said [Spokesperson Name], [Title]. "This represents a significant step forward in how we engage with our community."
-
-Key highlights include:
-• Streamlined content production workflow
-• Enhanced brand consistency across platforms
-• Improved audience engagement metrics
-
-For more information, contact:
-[Contact Name]
-[Email]
-[Phone]
-
-###`,
-
-        `PRESS RELEASE
-
-[Company Name] Sets New Standard for Brand Excellence
-
-[City, Date] — In a move that signals its commitment to innovation, [Company Name] has unveiled a comprehensive strategy to elevate its brand presence in the market.
-
-The initiative focuses on three core pillars: authenticity, consistency, and customer connection.
-
-"Our brand is more than what we sell—it's who we are," noted [Executive Name]. "This initiative ensures every interaction reflects our values."
-
-About [Company Name]:
-[Brief company description]
-
-Media Contact:
-[Details]`
-      ],
-      'Thought Leadership': [
-        `# The Future of Brand Voice in an AI World
-
-The conversation around AI and content has missed something crucial.
-
-While everyone debates whether AI can write "good" content, they're asking the wrong question. The real question is: can AI write content that sounds unmistakably like YOUR brand?
-
-## The Consistency Challenge
-
-Every day, brands publish hundreds of pieces of content across dozens of channels. Each piece is an opportunity to reinforce—or dilute—their brand identity.
-
-The companies winning today aren't just creating more content. They're creating more *consistent* content. Content that builds recognition. Content that builds trust.
-
-## A New Paradigm
-
-The future belongs to brands that can scale their authentic voice without losing what makes them unique.
-
-This isn't about replacing human creativity. It's about amplifying it.
-
-What's your take on maintaining brand authenticity at scale?`,
-
-        `# Why Your Brand Manual Is Your Most Undervalued Asset
-
-Most companies treat their brand guidelines like a dusty rulebook—referenced occasionally, followed inconsistently.
-
-But here's what the best brands understand: your brand manual isn't a constraint. It's a competitive advantage.
-
-## The Hidden ROI
-
-When every piece of content aligns with your brand voice:
-- Recognition increases
-- Trust compounds
-- Conversion improves
-
-## The Execution Gap
-
-The challenge has never been knowing what your brand should sound like. It's executing that vision consistently across every touchpoint, every channel, every day.
-
-The brands that solve this gap will define the next decade of marketing.`
-      ],
-      'Case Study': [
-        `# Case Study: Transforming Brand Consistency at Scale
-
-## The Challenge
-
-A growing tech company faced a common problem: as their team expanded, their brand voice became fragmented. Different departments created content that barely seemed connected.
-
-## The Approach
-
-By implementing a centralized brand voice system, they:
-1. Documented their core voice attributes
-2. Created templates aligned with brand guidelines
-3. Established review workflows
-
-## The Results
-
-Within 90 days:
-- **47% increase** in brand recognition scores
-- **32% improvement** in content production speed
-- **3x reduction** in revision cycles
-
-## Key Takeaway
-
-"We went from chaos to consistency without sacrificing creativity. Our brand finally speaks with one voice."
-
-— Marketing Director`,
-
-        `# Client Success Story
-
-## Background
-A mid-size B2B company struggled with inconsistent messaging across their sales and marketing materials.
-
-## Solution
-Implemented a unified brand content approach:
-- Centralized voice guidelines
-- Templated content frameworks
-- Cross-team alignment sessions
-
-## Impact
-📈 Brand consistency score: +58%
-⏱️ Content creation time: -40%
-💰 Campaign performance: +27%
-
-## Client Quote
-"For the first time, our brand feels cohesive. Customers notice the difference."`
-      ],
-      'Newsletter': [
-        `Subject: The one thing your content is missing 👀
-
-Hey there,
-
-Quick question: When someone reads your content, can they tell it's from YOU without seeing your logo?
-
-If you hesitated, you're not alone.
-
-Most brands struggle with this. They create great content that could belong to anyone.
-
-Here's the fix:
-
-**1. Identify your verbal tics**
-What phrases do you naturally use? What words feel like home?
-
-**2. Define your "no" list**
-What would your brand NEVER say? Sometimes knowing what you're not is just as important.
-
-**3. Test the blindfold**
-Remove your branding from content. Can people still identify you?
-
-Your brand voice is your fingerprint. Make it unmistakable.
-
-Cheers,
-[Your Name]
-
-P.S. Hit reply and tell me—what's ONE word that defines your brand voice?`,
-
-        `Subject: Your weekly dose of brand brilliance ✨
-
-Happy [Day]!
-
-This week, I've been thinking about consistency.
-
-Not the boring kind. The powerful kind.
-
-The kind that makes people say "Oh, that's SO them" before they even see your name.
-
-**What I'm reading:**
-→ [Article about brand voice]
-
-**What I'm trying:**
-→ Auditing our last 10 posts for voice consistency
-
-**What I'm asking:**
-→ How do YOU maintain brand voice across your team?
-
-Reply and let me know. I read every response.
-
-Until next week,
-[Name]`
-      ],
-      'Paid Media': [
-        `**Primary Headlines:**
-• Your Brand Voice, Amplified
-• Content That Sounds Like You
-• Stop Briefing. Start Creating.
-
-**Descriptions:**
-• Generate on-brand content in seconds. No more explaining your voice to AI.
-• Finally—content that captures your brand perfectly. Every time.
-• Your brand manual + AI = unlimited on-brand content.
-
-**Call-to-Action Options:**
-→ Try Free
-→ See How It Works
-→ Get Early Access
-
-**Ad Copy Variations:**
-
-Version A:
-"Tired of AI that doesn't get your brand? Pablo learns your voice and creates content that's unmistakably you. Join the waitlist."
-
-Version B:
-"Your brand has a voice. Now it has a megaphone. Pablo turns your brand guidelines into unlimited on-brand content."
-
-Version C:
-"What if every piece of content sounded perfectly on-brand? With Pablo, it does. Try it free."`,
-
-        `**Google Ads Copy:**
-
-Headline 1: On-Brand Content, Instantly
-Headline 2: Your Voice, Amplified by AI
-Headline 3: Stop Rewriting. Start Scaling.
-
-Description 1: Upload your brand manual once. Generate perfectly aligned content forever. Try Pablo free.
-
-Description 2: AI that actually gets your brand. Create social posts, PR, and more—all in your voice.
-
-**Facebook/Instagram Ads:**
-
-Hook: "POV: You never have to explain your brand voice again"
-
-Body: Every piece of content. Every channel. Every time. Perfectly on-brand.
-
-Pablo learns your brand manual and creates content that sounds like you wrote it yourself.
-
-CTA: Join 2,800+ brands on the waitlist →`
-      ]
-    };
-
-    let state = { 
-      contentType: 'Social Media', 
-      messages: [{ role: 'assistant', content: "Hi! I'm your brand content assistant. Select a content type and tell me what you'd like to create." }], 
-      input: '', 
-      loading: false,
-      responseIndex: {}
-    };
-
-    function getNextResponse(type) {
-      if (!state.responseIndex[type]) state.responseIndex[type] = 0;
-      const responses = DEMO_RESPONSES[type];
-      const response = responses[state.responseIndex[type] % responses.length];
-      state.responseIndex[type]++;
-      return response;
-    }
-
-    async function sendMessage() {
-      if (!state.input.trim() || state.loading) return;
-      const userMessage = state.input;
-      state.messages.push({ role: 'user', content: userMessage });
-      state.input = '';
-      state.loading = true;
-      render();
+import React, { useState } from 'react';
+import { Sparkles, Download, Copy, Plus, Image, Loader, RefreshCw } from 'lucide-react';
+
+// Supabase Config
+const SUPABASE_URL = 'https://dwtutqulczwrjtwkbzsm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dHV0cXVsY3p3cmp0d2tienNtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTYzMDQ2MiwiZXhwIjoyMDgxMjA2NDYyfQ.soQBtZA0fU9_ry94YHwcMcy9fJO5eGUXi_XD1eJ-sMY';
+
+// OpenAI Config
+const OPENAI_KEY = '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';
+
+const SOCIAL_TYPES = ['Social Media', 'Paid Media'];
+const PLATFORMS = ['Instagram', 'LinkedIn', 'Facebook'];
+const FORMATS = ['Static Post', 'Carousel', 'Paid Ad'];
+const BRAND_VALUES = ['innovation', 'clarity', 'freedom'];
+
+const IMAGE_SIZES = {
+  'Instagram': { 'Static Post': '1024x1024', 'Carousel': '1024x1024', 'Paid Ad': '1024x1792' },
+  'LinkedIn': { 'Static Post': '1792x1024', 'Carousel': '1024x1024', 'Paid Ad': '1792x1024' },
+  'Facebook': { 'Static Post': '1792x1024', 'Carousel': '1024x1024', 'Paid Ad': '1024x1024' }
+};
+
+// Query Supabase for matching images
+async function getImageFromBank(values, platform) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/brand_image_bank?select=*`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }}
+    );
+    if (!res.ok) return null;
+    const images = await res.json();
+    
+    // Find images matching brand values and platform
+    const matches = images.filter(img => {
+      const hasValue = values.some(v => img.brand_values?.includes(v));
+      const fitsPlatform = !platform || img.platform_fit?.includes(platform);
+      return hasValue && fitsPlatform;
+    });
+    
+    return matches.length > 0 ? matches[Math.floor(Math.random() * matches.length)] : images[0];
+  } catch (e) {
+    console.error('Supabase error:', e);
+    return null;
+  }
+}
+
+// Analyze request to extract brand values
+async function analyzeBrandValues(userRequest) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      system: `You analyze content requests and identify which brand values apply. The brand values are: innovation, clarity, freedom. Return ONLY a JSON array of matching values, e.g. ["innovation", "clarity"]. Nothing else.`,
+      messages: [{ role: 'user', content: userRequest }]
+    })
+  });
+  if (!res.ok) return ['innovation'];
+  const data = await res.json();
+  try {
+    return JSON.parse(data.content[0].text);
+  } catch {
+    return ['innovation'];
+  }
+}
+
+// Generate copy with Claude
+async function generateCopy(userRequest, contentType, platform, format, brandValues) {
+  const platformContext = platform ? `for ${platform} (${format})` : '';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: `You are Pablo, a brand content creator. Create ${contentType} content ${platformContext}.
       
-      // Simulate API delay
-      await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
+Brand values to embody: ${brandValues.join(', ')}
+- Innovation: Forward-thinking, cutting-edge, transformative
+- Clarity: Simple, clear, easy to understand
+- Freedom: Empowering, liberating, flexible
+
+Write in a warm, confident, elegant tone. Be concise and impactful.`,
+      messages: [{ role: 'user', content: userRequest }]
+    })
+  });
+  if (!res.ok) throw new Error('Failed to generate copy');
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// Generate image with DALL-E based on reference
+async function generateImage(referenceImage, userRequest, platform, format, brandValues) {
+  const size = IMAGE_SIZES[platform]?.[format] || '1024x1024';
+  
+  const stylePrompt = `Create a sophisticated, minimal image that embodies ${brandValues.join(' and ')}. 
+Style: Clean, modern, editorial quality. 
+Colors: Warm cream (#DFD1C1), soft terracotta (#E3B4A1), charcoal (#1E1E1E).
+Mood: ${referenceImage?.mood || 'inspiring and professional'}.
+Context: ${userRequest}
+Reference style: ${referenceImage?.description || 'minimal, elegant, brand-focused'}
+No text or words in the image.`;
+
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'dall-e-3',
+      prompt: stylePrompt,
+      n: 1,
+      size: size,
+      quality: 'standard'
+    })
+  });
+  
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Image generation failed');
+  }
+  
+  const data = await res.json();
+  return data.data[0].url;
+}
+
+export default function ContentStudioV3() {
+  const [contentType, setContentType] = useState('Social Media');
+  const [platform, setPlatform] = useState('Instagram');
+  const [format, setFormat] = useState('Static Post');
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [generated, setGenerated] = useState(null);
+  const [error, setError] = useState(null);
+
+  const showPlatformOptions = SOCIAL_TYPES.includes(contentType);
+
+  const generate = async () => {
+    if (!input.trim() || loading) return;
+    setLoading(true);
+    setGenerated(null);
+    setError(null);
+    
+    try {
+      // Step 1: Analyze brand values
+      setLoadingStep('Analyzing your request...');
+      const brandValues = await analyzeBrandValues(input);
       
-      const response = getNextResponse(state.contentType);
-      state.messages.push({ role: 'assistant', content: response });
-      state.loading = false;
-      render();
-      document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+      // Step 2: Get reference image from bank
+      setLoadingStep('Finding brand reference...');
+      const referenceImage = showPlatformOptions 
+        ? await getImageFromBank(brandValues, platform)
+        : null;
+      
+      // Step 3: Generate copy with Claude
+      setLoadingStep('Writing your copy...');
+      const copy = await generateCopy(input, contentType, platform, format, brandValues);
+      
+      // Step 4: Generate image with DALL-E (only for social/paid)
+      let generatedImageUrl = null;
+      if (showPlatformOptions) {
+        setLoadingStep('Creating your image...');
+        try {
+          generatedImageUrl = await generateImage(referenceImage, input, platform, format, brandValues);
+        } catch (imgErr) {
+          console.error('Image generation error:', imgErr);
+          // Continue without image
+        }
+      }
+      
+      setGenerated({
+        copy,
+        imageUrl: generatedImageUrl,
+        referenceImage,
+        brandValues,
+        platform,
+        format,
+        contentType
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setLoadingStep('');
     }
-    
-    function copyLastResponse() {
-      const last = state.messages.filter(m => m.role === 'assistant').pop();
-      if (last) { navigator.clipboard.writeText(last.content); showToast('Copied!'); }
-    }
-    
-    function resetChat() {
-      state.messages = [{ role: 'assistant', content: "Hi! I'm your brand content assistant. Select a content type and tell me what you'd like to create." }];
-      render();
-    }
-    
-    function showToast(msg) {
-      const t = document.createElement('div');
-      t.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm z-50';
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2000);
-    }
-    
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    
-    function render() {
-      const types = ['Social Media', 'PR News', 'Thought Leadership', 'Case Study', 'Newsletter', 'Paid Media'];
-      document.getElementById('app').innerHTML = `
-        <div class="flex flex-col h-screen">
-          <div class="bg-white border-b px-4 py-3">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-              </div>
-              <div><h1 class="font-semibold text-slate-900">Content Studio</h1><p class="text-xs text-slate-500">AI-powered brand content</p></div>
-            </div>
-            <select id="content-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white">
-              ${types.map(t => `<option value="${t}" ${state.contentType === t ? 'selected' : ''}>${t}</option>`).join('')}
-            </select>
+  };
+
+  const copyToClipboard = () => {
+    if (generated?.copy) navigator.clipboard.writeText(generated.copy);
+  };
+
+  const reset = () => {
+    setGenerated(null);
+    setInput('');
+    setError(null);
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-4 py-3">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            ${state.messages.map(m => `
-              <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="max-w-[85%] rounded-2xl px-4 py-2 ${m.role === 'user' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-900'}">
-                  <p class="text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(m.content)}</p>
+          <div>
+            <h1 className="font-semibold text-slate-900">Content Studio</h1>
+            <p className="text-xs text-slate-500">AI-powered brand content</p>
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+          <select 
+            value={contentType} 
+            onChange={(e) => { setContentType(e.target.value); setGenerated(null); }}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white"
+          >
+            {['Social Media', 'Paid Media', 'PR News', 'Thought Leadership', 'Case Study', 'Newsletter'].map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          
+          {showPlatformOptions && (
+            <div className="grid grid-cols-2 gap-3">
+              <select 
+                value={platform} 
+                onChange={(e) => setPlatform(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white"
+              >
+                {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <select 
+                value={format} 
+                onChange={(e) => setFormat(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white"
+              >
+                {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Loader className="w-8 h-8 text-purple-500 animate-spin mb-4" />
+            <p className="text-slate-600 text-sm font-medium">{loadingStep}</p>
+            {showPlatformOptions && (
+              <p className="text-slate-400 text-xs mt-1">{format} for {platform}</p>
+            )}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>
+            <button onClick={reset} className="text-sm text-purple-600 hover:underline">Try again</button>
+          </div>
+        ) : generated ? (
+          <div className="space-y-4">
+            {/* Brand Values Used */}
+            <div className="flex flex-wrap gap-2">
+              {generated.brandValues?.map(v => (
+                <span key={v} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full capitalize">{v}</span>
+              ))}
+            </div>
+            
+            {/* Generated Image */}
+            {generated.imageUrl && (
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-slate-500">{generated.platform} • {generated.format}</span>
+                  <span className="text-xs text-green-600">✓ AI Generated</span>
                 </div>
+                <div className="flex justify-center">
+                  <img 
+                    src={generated.imageUrl} 
+                    alt="Generated content" 
+                    className="rounded-lg max-h-72 object-contain"
+                  />
+                </div>
+                <a 
+                  href={generated.imageUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full mt-3 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-200 flex items-center justify-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Download Image
+                </a>
               </div>
-            `).join('')}
-            ${state.loading ? `<div class="flex justify-start"><div class="bg-white border border-slate-200 rounded-2xl px-4 py-3"><div class="flex gap-1"><div class="w-2 h-2 bg-slate-400 rounded-full bounce-1"></div><div class="w-2 h-2 bg-slate-400 rounded-full bounce-2"></div><div class="w-2 h-2 bg-slate-400 rounded-full bounce-3"></div></div></div></div>` : ''}
-          </div>
-          <div class="bg-white border-t p-3">
-            <div class="flex gap-2 mb-2">
-              <input type="text" id="message-input" placeholder="Describe what content you need..." class="flex-1 px-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" value="${escapeHtml(state.input)}" ${state.loading ? 'disabled' : ''}/>
-              <button id="send-btn" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium disabled:bg-slate-300" ${state.loading ? 'disabled' : ''}>Send</button>
-            </div>
-            <div class="flex gap-2">
-              <button id="copy-btn" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>Copy
+            )}
+            
+            {/* Copy Preview */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500">Caption / Copy</span>
+              </div>
+              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{generated.copy}</p>
+              <button 
+                onClick={copyToClipboard}
+                className="w-full mt-3 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 flex items-center justify-center gap-1"
+              >
+                <Copy className="w-3 h-3" />
+                Copy Caption
               </button>
-              <button id="reset-btn" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>New
-              </button>
+            </div>
+            
+            {/* Reset */}
+            <button 
+              onClick={reset}
+              className="w-full px-4 py-3 border border-slate-300 text-slate-600 rounded-xl text-sm font-medium hover:bg-white flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create New Content
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4">
+              <Sparkles className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="font-semibold text-slate-900 mb-1">What would you like to create?</h3>
+            <p className="text-sm text-slate-500 mb-3">Pablo will match your brand values automatically</p>
+            <div className="flex gap-2">
+              {BRAND_VALUES.map(v => (
+                <span key={v} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full capitalize">{v}</span>
+              ))}
             </div>
           </div>
-        </div>`;
-      document.getElementById('content-type').addEventListener('change', e => { state.contentType = e.target.value; });
-      document.getElementById('message-input').addEventListener('input', e => { state.input = e.target.value; });
-      document.getElementById('message-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-      document.getElementById('send-btn').addEventListener('click', sendMessage);
-      document.getElementById('copy-btn').addEventListener('click', copyLastResponse);
-      document.getElementById('reset-btn').addEventListener('click', resetChat);
-    }
-    render();
-  </script>
-</body>
-</html>
+        )}
+      </div>
+      
+      {/* Input */}
+      {!loading && !generated && (
+        <div className="bg-white border-t border-slate-200 p-3">
+          <div className="flex gap-2">
+            <input 
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && generate()}
+              placeholder="e.g. Create a post about brand consistency..."
+              className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <button 
+              onClick={generate}
+              disabled={!input.trim()}
+              className="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-800 disabled:bg-slate-300"
+            >
+              Generate
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
