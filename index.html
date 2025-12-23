@@ -6,350 +6,434 @@
   <title>Content Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; width: 100%; font-family: system-ui, -apple-system, sans-serif; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .animate-bounce { animation: bounce 0.6s infinite; }
+    .animate-pulse { animation: pulse 2s infinite; }
     .animate-spin { animation: spin 1s linear infinite; }
   </style>
 </head>
-<body class="bg-slate-50">
-  <div id="app" class="min-h-screen"></div>
-  
+<body>
+  <div id="app"></div>
+
   <script>
     // ============================================
-    // CONFIGURATION
+    // API CONFIGURATION
     // ============================================
-    const SUPABASE_URL = 'https://dwtutqulczwrjtwkbzsm.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dHV0cXVsY3p3cmp0d2tienNtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTYzMDQ2MiwiZXhwIjoyMDgxMjA2NDYyfQ.soQBtZA0fU9_ry94YHwcMcy9fJO5eGUXi_XD1eJ-sMY';
-    const OPENAI_KEY = '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';
-
-    const SOCIAL_TYPES = ['Social Media', 'Paid Media'];
-    const PLATFORMS = ['Instagram', 'LinkedIn', 'Facebook'];
-    const FORMATS = ['Static Post', 'Carousel', 'Paid Ad'];
-    const BRAND_VALUES = ['innovation', 'clarity', 'freedom'];
-    
-    const IMAGE_SIZES = {
-      'Instagram': { 'Static Post': '1024x1024', 'Carousel': '1024x1024', 'Paid Ad': '1024x1792' },
-      'LinkedIn': { 'Static Post': '1792x1024', 'Carousel': '1024x1024', 'Paid Ad': '1792x1024' },
-      'Facebook': { 'Static Post': '1792x1024', 'Carousel': '1024x1024', 'Paid Ad': '1024x1024' }
+    const CONFIG = {
+      SUPABASE_URL: 'https://fczusxwyjgatjubqtbot.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjenVzeHd5amdhdGp1YnF0Ym90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0OTM3ODQsImV4cCI6MjA4MDA2OTc4NH0.8dfV1rS421ixeKgY3XAd-LonBwd5X3ZsOdQTr0x2iAs',
+      GEMINI_API_KEY: 'AIzaSyD4SV7FoPFUKb3udITE5fo6B-T2qUTF-w0',
+      CLAUDE_API_KEY: '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'
     };
 
+    // ============================================
+    // STATE
+    // ============================================
     let state = {
       contentType: 'Social Media',
       platform: 'Instagram',
       format: 'Static Post',
       input: '',
       loading: false,
-      loadingStep: '',
+      loadingStage: '',
       generated: null,
-      error: null
+      error: null,
+      copied: false,
+      brandData: { tov: [], audience: [], messaging: [], colors: [], guidelines: [], loaded: false }
+    };
+
+    const SOCIAL_TYPES = ['Social Media', 'Paid Media'];
+    const PLATFORMS = ['Instagram', 'LinkedIn', 'Facebook'];
+    const FORMATS = ['Static Post', 'Carousel', 'Paid Ad'];
+    const CONTENT_TYPES = ['Social Media', 'Paid Media', 'PR News', 'Thought Leadership', 'Case Study', 'Newsletter'];
+
+    const IMAGE_SPECS = {
+      'Instagram': { 'Static Post': { w: 1080, h: 1080, label: '1:1 Square', ratio: '1:1' }, 'Carousel': { w: 1080, h: 1080, label: '1:1', ratio: '1:1' }, 'Paid Ad': { w: 1080, h: 1350, label: '4:5', ratio: '4:5' } },
+      'LinkedIn': { 'Static Post': { w: 1200, h: 627, label: '1.91:1', ratio: '16:9' }, 'Carousel': { w: 1080, h: 1080, label: '1:1', ratio: '1:1' }, 'Paid Ad': { w: 1200, h: 627, label: '1.91:1', ratio: '16:9' } },
+      'Facebook': { 'Static Post': { w: 1200, h: 630, label: '1.91:1', ratio: '16:9' }, 'Carousel': { w: 1080, h: 1080, label: '1:1', ratio: '1:1' }, 'Paid Ad': { w: 1080, h: 1080, label: '1:1', ratio: '1:1' } }
     };
 
     // ============================================
-    // API FUNCTIONS
+    // SUPABASE
     // ============================================
-    
-    async function getImageFromBank(values, platform) {
+    async function supabaseQuery(table) {
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/brand_image_bank?select=*`, {
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${table}?select=*`, {
+          headers: {
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
         });
-        if (!res.ok) return null;
-        const images = await res.json();
-        const matches = images.filter(img => {
-          const hasValue = values.some(v => img.brand_values?.includes(v));
-          const fitsPlatform = !platform || img.platform_fit?.includes(platform);
-          return hasValue && fitsPlatform;
-        });
-        return matches.length > 0 ? matches[Math.floor(Math.random() * matches.length)] : images[0];
-      } catch (e) { return null; }
+        if (!response.ok) throw new Error(`Failed to fetch ${table}`);
+        return await response.json();
+      } catch (error) {
+        console.error(`Supabase error (${table}):`, error);
+        return [];
+      }
     }
 
-    async function analyzeBrandValues(userRequest) {
+    async function loadBrandData() {
       try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 200,
-            system: 'You analyze content requests and identify which brand values apply. The brand values are: innovation, clarity, freedom. Return ONLY a JSON array of matching values, e.g. ["innovation", "clarity"]. Nothing else.',
-            messages: [{ role: 'user', content: userRequest }]
-          })
-        });
-        if (!res.ok) return ['innovation'];
-        const data = await res.json();
-        return JSON.parse(data.content[0].text);
-      } catch { return ['innovation']; }
-    }
-
-    async function generateCopy(userRequest, contentType, platform, format, brandValues) {
-      const platformContext = platform ? `for ${platform} (${format})` : '';
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: `You are Pablo, a brand content creator. Create ${contentType} content ${platformContext}.
-Brand values to embody: ${brandValues.join(', ')}
-- Innovation: Forward-thinking, cutting-edge, transformative
-- Clarity: Simple, clear, easy to understand  
-- Freedom: Empowering, liberating, flexible
-Write in a warm, confident, elegant tone. Be concise and impactful.`,
-          messages: [{ role: 'user', content: userRequest }]
-        })
-      });
-      if (!res.ok) throw new Error('Failed to generate copy');
-      const data = await res.json();
-      return data.content[0].text;
-    }
-
-    async function generateImage(referenceImage, userRequest, platform, format, brandValues) {
-      const size = IMAGE_SIZES[platform]?.[format] || '1024x1024';
-      const stylePrompt = `Create a sophisticated, minimal image that embodies ${brandValues.join(' and ')}. 
-Style: Clean, modern, editorial quality. Colors: Warm cream, soft terracotta, charcoal.
-Mood: ${referenceImage?.mood || 'inspiring and professional'}.
-Context: ${userRequest}
-Reference style: ${referenceImage?.description || 'minimal, elegant, brand-focused'}
-No text or words in the image.`;
-
-      const res = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-        body: JSON.stringify({ model: 'dall-e-3', prompt: stylePrompt, n: 1, size: size, quality: 'standard' })
-      });
-      if (!res.ok) throw new Error('Image generation failed');
-      const data = await res.json();
-      return data.data[0].url;
-    }
-
-    // ============================================
-    // MAIN GENERATE FUNCTION
-    // ============================================
-    
-    async function generate() {
-      if (!state.input.trim() || state.loading) return;
-      state.loading = true;
-      state.generated = null;
-      state.error = null;
-      render();
-
-      try {
-        const showImage = SOCIAL_TYPES.includes(state.contentType);
-        
-        state.loadingStep = 'Analyzing your request...';
+        const [tov, audience, messaging, colors, guidelines] = await Promise.all([
+          supabaseQuery('tone_of_voice'),
+          supabaseQuery('target_audience'),
+          supabaseQuery('messaging_framework'),
+          supabaseQuery('brand_colors'),
+          supabaseQuery('brand_guidelines')
+        ]);
+        state.brandData = { tov, audience, messaging, colors, guidelines, loaded: true };
         render();
-        const brandValues = await analyzeBrandValues(state.input);
-        
-        let referenceImage = null;
-        if (showImage) {
-          state.loadingStep = 'Finding brand reference...';
-          render();
-          referenceImage = await getImageFromBank(brandValues, state.platform);
-        }
-        
-        state.loadingStep = 'Writing your copy...';
-        render();
-        const copy = await generateCopy(state.input, state.contentType, state.platform, state.format, brandValues);
-        
-        let imageUrl = null;
-        if (showImage) {
-          state.loadingStep = 'Creating your image...';
-          render();
-          try {
-            imageUrl = await generateImage(referenceImage, state.input, state.platform, state.format, brandValues);
-          } catch (e) { console.error('Image error:', e); }
-        }
-
-        state.generated = { copy, imageUrl, brandValues, platform: state.platform, format: state.format, contentType: state.contentType };
-        state.input = '';
-      } catch (e) {
-        state.error = e.message;
-      } finally {
-        state.loading = false;
-        state.loadingStep = '';
+      } catch (err) {
+        console.error('Failed to load brand data:', err);
+        state.brandData.loaded = true;
         render();
       }
     }
 
+    // ============================================
+    // CLAUDE API
+    // ============================================
+    async function generateCopyWithClaude(prompt) {
+      const { tov, audience, messaging, colors } = state.brandData;
+      
+      const systemPrompt = `You are a brand content creator. Generate content following these brand guidelines:
+
+TONE OF VOICE:
+${tov.map(t => `- ${t.tov_name || t.content_type}: ${t.writing_style_description || ''}`).join('\n') || 'Professional and engaging'}
+
+TARGET AUDIENCE:
+${audience.map(a => `- ${a.persona_name || 'Target'}: ${a.goals_motivations || ''}`).join('\n') || 'Business professionals'}
+
+KEY MESSAGING:
+${messaging.map(m => `- ${m.message_name || m.message_type}: ${m.message_text || ''}`).join('\n') || 'Value-driven messaging'}
+
+Generate authentic, engaging content aligned with the brand voice.`;
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CONFIG.CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Claude API failed');
+      }
+
+      const data = await response.json();
+      return data.content[0].text;
+    }
+
+    // ============================================
+    // GEMINI API
+    // ============================================
+    async function generateImageWithGemini(prompt) {
+      const { colors } = state.brandData;
+      const colorPalette = colors.map(c => c.hex_code).join(', ');
+      
+      const enhancedPrompt = `${prompt}. Style: Modern, professional brand imagery. Colors: ${colorPalette || 'vibrant'}. High quality social media content.`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${CONFIG.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt: enhancedPrompt }],
+          parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_few', personGeneration: 'allow_adult' }
+        })
+      });
+
+      if (!response.ok) throw new Error('Image generation failed');
+      const data = await response.json();
+      if (data.predictions?.[0]?.bytesBase64Encoded) {
+        return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+      }
+      throw new Error('No image generated');
+    }
+
+    // ============================================
+    // GENERATE CONTENT
+    // ============================================
+    async function generate() {
+      if (!state.input.trim() || state.loading) return;
+      
+      state.loading = true;
+      state.error = null;
+      state.generated = null;
+      render();
+
+      try {
+        const showPlatformOptions = SOCIAL_TYPES.includes(state.contentType);
+        const imageSpec = showPlatformOptions ? IMAGE_SPECS[state.platform]?.[state.format] : null;
+        
+        let copyPrompt = '';
+        switch (state.contentType) {
+          case 'Social Media':
+            copyPrompt = `Create a ${state.platform} ${state.format.toLowerCase()} caption for: ${state.input}. Keep it engaging for ${state.platform}. Include a call-to-action and relevant hashtags.`;
+            break;
+          case 'Paid Media':
+            copyPrompt = `Create paid ad copy for ${state.platform} (${state.format}) about: ${state.input}. Include: Headline (max 40 chars), Primary text, and CTA.`;
+            break;
+          case 'PR News':
+            copyPrompt = `Write a press release about: ${state.input}. Include: Headline, dateline, lead paragraph, quotes, and boilerplate.`;
+            break;
+          case 'Thought Leadership':
+            copyPrompt = `Write a thought leadership article about: ${state.input}. Include: Headline, introduction, 2-3 key insights, and conclusion.`;
+            break;
+          case 'Case Study':
+            copyPrompt = `Create a case study about: ${state.input}. Include: Challenge, Solution, Results with metrics, and client quote.`;
+            break;
+          case 'Newsletter':
+            copyPrompt = `Write a newsletter email about: ${state.input}. Include: Subject line, preview text, greeting, main content, and sign-off.`;
+            break;
+          default:
+            copyPrompt = state.input;
+        }
+
+        state.loadingStage = 'Crafting your copy with Claude...';
+        render();
+        const copy = await generateCopyWithClaude(copyPrompt);
+
+        let imageUrl = null;
+        if (showPlatformOptions && imageSpec) {
+          state.loadingStage = 'Creating your image with Gemini...';
+          render();
+          try {
+            imageUrl = await generateImageWithGemini(`Professional social media image for: ${state.input}. Style: modern, clean, for ${state.platform} ${state.format}.`);
+          } catch (imgError) {
+            console.error('Image generation failed:', imgError);
+          }
+        }
+
+        state.generated = { copy, imageUrl, imageSpec, platform: state.platform, format: state.format, contentType: state.contentType };
+        state.input = '';
+      } catch (err) {
+        console.error('Generation error:', err);
+        state.error = err.message || 'Failed to generate content.';
+      } finally {
+        state.loading = false;
+        state.loadingStage = '';
+        render();
+      }
+    }
+
+    // ============================================
+    // ACTIONS
+    // ============================================
     function copyToClipboard() {
       if (state.generated?.copy) {
         navigator.clipboard.writeText(state.generated.copy);
-        showToast('Copied!');
+        state.copied = true;
+        render();
+        setTimeout(() => { state.copied = false; render(); }, 2000);
+      }
+    }
+
+    function downloadImage() {
+      if (state.generated?.imageUrl) {
+        const link = document.createElement('a');
+        link.href = state.generated.imageUrl;
+        link.download = `${state.platform}-${state.format.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.png`;
+        link.click();
       }
     }
 
     function reset() {
       state.generated = null;
-      state.error = null;
       state.input = '';
+      state.error = null;
       render();
     }
 
-    function showToast(msg) {
-      const t = document.createElement('div');
-      t.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm z-50';
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2000);
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    function updateState(key, value) {
+      state[key] = value;
+      if (key === 'contentType') {
+        state.generated = null;
+        state.error = null;
+      }
+      render();
     }
 
     // ============================================
     // RENDER
     // ============================================
-    
     function render() {
-      const contentTypes = ['Social Media', 'Paid Media', 'PR News', 'Thought Leadership', 'Case Study', 'Newsletter'];
+      const app = document.getElementById('app');
       const showPlatformOptions = SOCIAL_TYPES.includes(state.contentType);
+      
+      if (!state.brandData.loaded) {
+        app.innerHTML = `
+          <div class="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 items-center justify-center">
+            <div class="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-slate-600 text-sm">Loading brand data...</p>
+          </div>
+        `;
+        return;
+      }
 
-      document.getElementById('app').innerHTML = `
-        <div class="flex flex-col h-screen">
+      let mainContent = '';
+      
+      if (state.loading) {
+        mainContent = `
+          <div class="flex flex-col items-center justify-center h-full">
+            <div class="relative mb-6">
+              <div class="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl animate-pulse"></div>
+            </div>
+            <div class="flex gap-1 mb-4">
+              <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+              <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
+              <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+            </div>
+            <p class="text-slate-700 font-medium">${state.loadingStage || 'Generating...'}</p>
+            ${showPlatformOptions ? `<p class="text-slate-400 text-sm mt-1">Creating ${state.format} for ${state.platform}</p>` : ''}
+          </div>
+        `;
+      } else if (state.error) {
+        mainContent = `
+          <div class="flex flex-col items-center justify-center h-full">
+            <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <p class="text-red-600 font-medium mb-2">Generation Failed</p>
+            <p class="text-slate-500 text-sm text-center mb-4 max-w-xs">${state.error}</p>
+            <button onclick="state.error = null; render();" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-800">Try again</button>
+          </div>
+        `;
+      } else if (state.generated) {
+        const g = state.generated;
+        mainContent = `
+          <div class="space-y-4">
+            ${g.imageSpec ? `
+              <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-semibold text-slate-600">${g.platform} • ${g.format}</span>
+                  <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${g.imageSpec.label}</span>
+                </div>
+                <div class="flex justify-center">
+                  ${g.imageUrl ? `
+                    <img src="${g.imageUrl}" alt="Generated" class="rounded-xl max-w-full shadow-lg" style="max-height: 280px; object-fit: contain;" />
+                  ` : `
+                    <div class="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-xl flex items-center justify-center text-white" style="width: 250px; height: ${g.imageSpec.ratio === '1:1' ? '250px' : g.imageSpec.ratio === '4:5' ? '312px' : '140px'}">
+                      <div class="text-center p-4">
+                        <svg class="w-8 h-8 mx-auto mb-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                        <p class="text-xs opacity-80">Image unavailable</p>
+                        <p class="text-xs opacity-60">${g.imageSpec.w}×${g.imageSpec.h}</p>
+                      </div>
+                    </div>
+                  `}
+                </div>
+                ${g.imageUrl ? `<button onclick="downloadImage()" class="w-full mt-4 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download Image
+                </button>` : ''}
+              </div>
+            ` : ''}
+            
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-600">${showPlatformOptions ? 'Caption / Copy' : g.contentType}</span>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-4 mb-4 max-h-64 overflow-y-auto">
+                <p class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">${g.copy}</p>
+              </div>
+              <button onclick="copyToClipboard()" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${state.copied ? 'bg-green-500 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}">
+                ${state.copied ? `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!` : `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy to Clipboard`}
+              </button>
+            </div>
+            
+            <button onclick="reset()" class="w-full px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 flex items-center justify-center gap-2 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create New Content
+            </button>
+          </div>
+        `;
+      } else {
+        mainContent = `
+          <div class="flex flex-col items-center justify-center h-full">
+            <div class="relative mb-6">
+              <div class="w-20 h-20 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 rounded-3xl flex items-center justify-center">
+                <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+              </div>
+              ${state.brandData.tov.length > 0 ? `<div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+            </div>
+            <h3 class="font-bold text-slate-900 text-lg mb-1">What would you like to create?</h3>
+            <p class="text-sm text-slate-500 mb-3 text-center">${state.brandData.tov.length > 0 ? 'Your brand data is loaded and ready' : 'Enter a prompt to generate content'}</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              <span class="text-xs text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full font-medium">${showPlatformOptions ? `${state.format} for ${state.platform}` : state.contentType}</span>
+              ${state.brandData.tov.length > 0 ? `<span class="text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full font-medium">${state.brandData.tov.length} voice styles</span>` : ''}
+              ${state.brandData.colors.length > 0 ? `<span class="text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-medium">${state.brandData.colors.length} colors</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        <div class="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
           <!-- Header -->
-          <div class="bg-white border-b border-slate-200 px-4 py-3">
-            <div class="flex items-center gap-2 mb-3">
-              <div class="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                </svg>
+          <div class="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 py-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-xl flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
               </div>
               <div>
-                <h1 class="font-semibold text-slate-900">Content Studio</h1>
+                <h1 class="font-bold text-slate-900 text-lg">Content Studio</h1>
                 <p class="text-xs text-slate-500">AI-powered brand content</p>
               </div>
+              ${state.brandData.tov.length > 0 ? `<div class="ml-auto flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Connected</span></div>` : ''}
             </div>
             
             <div class="space-y-3">
-              <select id="content-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white">
-                ${contentTypes.map(t => `<option value="${t}" ${state.contentType === t ? 'selected' : ''}>${t}</option>`).join('')}
+              <select onchange="updateState('contentType', this.value)" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+                ${CONTENT_TYPES.map(t => `<option value="${t}" ${state.contentType === t ? 'selected' : ''}>${t}</option>`).join('')}
               </select>
               
               ${showPlatformOptions ? `
                 <div class="grid grid-cols-2 gap-3">
-                  <select id="platform" class="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white">
+                  <select onchange="updateState('platform', this.value)" class="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20">
                     ${PLATFORMS.map(p => `<option value="${p}" ${state.platform === p ? 'selected' : ''}>${p}</option>`).join('')}
                   </select>
-                  <select id="format" class="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white">
+                  <select onchange="updateState('format', this.value)" class="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20">
                     ${FORMATS.map(f => `<option value="${f}" ${state.format === f ? 'selected' : ''}>${f}</option>`).join('')}
                   </select>
                 </div>
               ` : ''}
             </div>
           </div>
-
+          
           <!-- Main Content -->
           <div class="flex-1 overflow-y-auto p-4">
-            ${state.loading ? `
-              <div class="flex flex-col items-center justify-center h-full">
-                <svg class="w-8 h-8 text-purple-500 animate-spin mb-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="text-slate-600 text-sm font-medium">${state.loadingStep}</p>
-                ${showPlatformOptions ? `<p class="text-slate-400 text-xs mt-1">${state.format} for ${state.platform}</p>` : ''}
-              </div>
-            ` : state.error ? `
-              <div class="flex flex-col items-center justify-center h-full">
-                <div class="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">${state.error}</div>
-                <button onclick="reset()" class="text-sm text-purple-600 hover:underline">Try again</button>
-              </div>
-            ` : state.generated ? `
-              <div class="space-y-4">
-                <!-- Brand Values -->
-                <div class="flex flex-wrap gap-2">
-                  ${state.generated.brandValues?.map(v => `<span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full capitalize">${v}</span>`).join('')}
-                </div>
-                
-                ${state.generated.imageUrl ? `
-                  <!-- Generated Image -->
-                  <div class="bg-white rounded-xl border border-slate-200 p-4">
-                    <div class="flex items-center justify-between mb-3">
-                      <span class="text-xs font-medium text-slate-500">${state.generated.platform} • ${state.generated.format}</span>
-                      <span class="text-xs text-green-600">✓ AI Generated</span>
-                    </div>
-                    <div class="flex justify-center">
-                      <img src="${state.generated.imageUrl}" alt="Generated" class="rounded-lg max-h-72 object-contain"/>
-                    </div>
-                    <a href="${state.generated.imageUrl}" target="_blank" class="w-full mt-3 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-200 flex items-center justify-center gap-1">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                      Download Image
-                    </a>
-                  </div>
-                ` : ''}
-                
-                <!-- Copy -->
-                <div class="bg-white rounded-xl border border-slate-200 p-4">
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-medium text-slate-500">Caption / Copy</span>
-                  </div>
-                  <p class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">${escapeHtml(state.generated.copy)}</p>
-                  <button onclick="copyToClipboard()" class="w-full mt-3 px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 flex items-center justify-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    Copy Caption
-                  </button>
-                </div>
-                
-                <button onclick="reset()" class="w-full px-4 py-3 border border-slate-300 text-slate-600 rounded-xl text-sm font-medium hover:bg-white flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                  Create New Content
-                </button>
-              </div>
-            ` : `
-              <!-- Empty State -->
-              <div class="flex flex-col items-center justify-center h-full">
-                <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                  </svg>
-                </div>
-                <h3 class="font-semibold text-slate-900 mb-1">What would you like to create?</h3>
-                <p class="text-sm text-slate-500 mb-3">Pablo will match your brand values automatically</p>
-                <div class="flex gap-2">
-                  ${BRAND_VALUES.map(v => `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full capitalize">${v}</span>`).join('')}
-                </div>
-              </div>
-            `}
+            ${mainContent}
           </div>
-
-          <!-- Input -->
+          
+          <!-- Input Area -->
           ${!state.loading && !state.generated ? `
-            <div class="bg-white border-t border-slate-200 p-3">
-              <div class="flex gap-2">
-                <input type="text" id="input" placeholder="e.g. Create a post about brand consistency..." 
-                  class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                  value="${escapeHtml(state.input)}"/>
-                <button onclick="generate()" id="gen-btn" class="px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-800 disabled:bg-slate-300" ${!state.input.trim() ? 'disabled' : ''}>
-                  Generate
-                </button>
+            <div class="bg-white/80 backdrop-blur-xl border-t border-slate-200/50 p-4">
+              <div class="flex gap-3">
+                <input type="text" id="promptInput" value="${state.input}" oninput="state.input = this.value" onkeypress="if(event.key === 'Enter') generate()" placeholder="Describe what content you need..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm" />
+                <button onclick="generate()" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-pink-700 disabled:from-slate-300 disabled:to-slate-300 shadow-lg">Generate</button>
               </div>
             </div>
           ` : ''}
         </div>
       `;
-
-      // Event listeners
-      document.getElementById('content-type')?.addEventListener('change', e => {
-        state.contentType = e.target.value;
-        state.generated = null;
-        render();
-      });
-      document.getElementById('platform')?.addEventListener('change', e => { state.platform = e.target.value; });
-      document.getElementById('format')?.addEventListener('change', e => { state.format = e.target.value; });
-      document.getElementById('input')?.addEventListener('input', e => {
-        state.input = e.target.value;
-        const btn = document.getElementById('gen-btn');
-        if (btn) btn.disabled = !state.input.trim();
-      });
-      document.getElementById('input')?.addEventListener('keypress', e => { if (e.key === 'Enter') generate(); });
     }
 
-    render();
+    // Initialize
+    loadBrandData();
   </script>
 </body>
 </html>
