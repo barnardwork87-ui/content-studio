@@ -10,10 +10,8 @@
     html, body { height: 100%; width: 100%; font-family: system-ui, -apple-system, sans-serif; }
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .animate-bounce { animation: bounce 0.6s infinite; }
     .animate-pulse { animation: pulse 2s infinite; }
-    .animate-spin { animation: spin 1s linear infinite; }
   </style>
 </head>
 <body>
@@ -26,8 +24,7 @@
     const CONFIG = {
       SUPABASE_URL: 'https://fczusxwyjgatjubqtbot.supabase.co',
       SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjenVzeHd5amdhdGp1YnF0Ym90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0OTM3ODQsImV4cCI6MjA4MDA2OTc4NH0.8dfV1rS421ixeKgY3XAd-LonBwd5X3ZsOdQTr0x2iAs',
-      GEMINI_API_KEY: 'AIzaSyD4SV7FoPFUKb3udITE5fo6B-T2qUTF-w0',
-      CLAUDE_API_KEY: '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'
+      GROQ_API_KEY: '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'
     };
 
     // ============================================
@@ -43,7 +40,7 @@
       generated: null,
       error: null,
       copied: false,
-      brandData: { tov: [], audience: [], messaging: [], colors: [], guidelines: [], loaded: false }
+      brandData: { tov: [], audience: [], messaging: [], colors: [], guidelines: [], imageBank: [], loaded: false }
     };
 
     const SOCIAL_TYPES = ['Social Media', 'Paid Media'];
@@ -79,14 +76,15 @@
 
     async function loadBrandData() {
       try {
-        const [tov, audience, messaging, colors, guidelines] = await Promise.all([
+        const [tov, audience, messaging, colors, guidelines, imageBank] = await Promise.all([
           supabaseQuery('tone_of_voice'),
           supabaseQuery('target_audience'),
           supabaseQuery('messaging_framework'),
           supabaseQuery('brand_colors'),
-          supabaseQuery('brand_guidelines')
+          supabaseQuery('brand_guidelines'),
+          supabaseQuery('brand_image_bank')
         ]);
-        state.brandData = { tov, audience, messaging, colors, guidelines, loaded: true };
+        state.brandData = { tov, audience, messaging, colors, guidelines, imageBank, loaded: true };
         render();
       } catch (err) {
         console.error('Failed to load brand data:', err);
@@ -96,12 +94,12 @@
     }
 
     // ============================================
-    // CLAUDE API
+    // GROQ API - TEXT GENERATION
     // ============================================
-    async function generateCopyWithClaude(prompt) {
-      const { tov, audience, messaging, colors } = state.brandData;
+    async function generateCopyWithGroq(prompt) {
+      const { tov, audience, messaging } = state.brandData;
       
-      const systemPrompt = `You are a brand content creator. Generate content following these brand guidelines:
+      const systemContext = `You are a brand content creator. Generate content following these brand guidelines:
 
 TONE OF VOICE:
 ${tov.map(t => `- ${t.tov_name || t.content_type}: ${t.writing_style_description || ''}`).join('\n') || 'Professional and engaging'}
@@ -112,57 +110,72 @@ ${audience.map(a => `- ${a.persona_name || 'Target'}: ${a.goals_motivations || '
 KEY MESSAGING:
 ${messaging.map(m => `- ${m.message_name || m.message_type}: ${m.message_text || ''}`).join('\n') || 'Value-driven messaging'}
 
-Generate authentic, engaging content aligned with the brand voice.`;
+Generate authentic, engaging content aligned with the brand voice. Be creative and compelling.`;
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': CONFIG.CLAUDE_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
+          'Authorization': `Bearer ${CONFIG.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: prompt }]
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemContext },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.8,
+          max_tokens: 1024
         })
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error?.message || 'Claude API failed');
+        throw new Error(error.error?.message || 'Groq API failed');
       }
 
       const data = await response.json();
-      return data.content[0].text;
+      return data.choices[0].message.content;
     }
 
     // ============================================
-    // GEMINI API
+    // POLLINATIONS.AI - FREE IMAGE GENERATION
     // ============================================
-    async function generateImageWithGemini(prompt) {
-      const { colors } = state.brandData;
-      const colorPalette = colors.map(c => c.hex_code).join(', ');
+    function generateImageWithPollinations(prompt) {
+      const { imageBank } = state.brandData;
       
-      const enhancedPrompt = `${prompt}. Style: Modern, professional brand imagery. Colors: ${colorPalette || 'vibrant'}. High quality social media content.`;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${CONFIG.GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{ prompt: enhancedPrompt }],
-          parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_few', personGeneration: 'allow_adult' }
-        })
-      });
-
-      if (!response.ok) throw new Error('Image generation failed');
-      const data = await response.json();
-      if (data.predictions?.[0]?.bytesBase64Encoded) {
-        return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+      // Aggregate style data from all brand_image_bank entries
+      let styles = [];
+      let moods = [];
+      let brandValues = [];
+      let descriptions = [];
+      
+      if (imageBank && imageBank.length > 0) {
+        imageBank.forEach(img => {
+          if (img.style) styles.push(img.style);
+          if (img.mood) moods.push(img.mood);
+          if (img.brand_values) brandValues.push(img.brand_values);
+          if (img.description) descriptions.push(img.description);
+        });
       }
-      throw new Error('No image generated');
+      
+      // Create unique, comma-separated lists
+      const uniqueStyles = [...new Set(styles)].slice(0, 3).join(', ') || 'Modern, professional, clean';
+      const uniqueMoods = [...new Set(moods)].slice(0, 3).join(', ') || 'sophisticated, inspiring';
+      const uniqueValues = [...new Set(brandValues)].slice(0, 3).join(', ') || 'innovative, trustworthy';
+      const styleDescription = descriptions[0] || '';
+      
+      const enhancedPrompt = encodeURIComponent(
+        `${prompt}. 
+        Visual style: ${uniqueStyles}. 
+        Mood: ${uniqueMoods}. 
+        Brand essence: ${uniqueValues}. 
+        ${styleDescription ? `Reference: ${styleDescription}.` : ''}
+        High quality, professional social media content, suitable for brand marketing.`
+      );
+      
+      // Pollinations.ai returns an image URL directly - no API key needed!
+      return `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=1080&height=1080&nologo=true`;
     }
 
     // ============================================
@@ -183,10 +196,10 @@ Generate authentic, engaging content aligned with the brand voice.`;
         let copyPrompt = '';
         switch (state.contentType) {
           case 'Social Media':
-            copyPrompt = `Create a ${state.platform} ${state.format.toLowerCase()} caption for: ${state.input}. Keep it engaging for ${state.platform}. Include a call-to-action and relevant hashtags.`;
+            copyPrompt = `Create a ${state.platform} ${state.format.toLowerCase()} caption for: ${state.input}. Keep it engaging for ${state.platform}. Include a call-to-action and relevant hashtags at the end.`;
             break;
           case 'Paid Media':
-            copyPrompt = `Create paid ad copy for ${state.platform} (${state.format}) about: ${state.input}. Include: Headline (max 40 chars), Primary text, and CTA.`;
+            copyPrompt = `Create paid ad copy for ${state.platform} (${state.format}) about: ${state.input}. Include: Headline (max 40 chars), Primary text, and CTA. Format with clear labels.`;
             break;
           case 'PR News':
             copyPrompt = `Write a press release about: ${state.input}. Include: Headline, dateline, lead paragraph, quotes, and boilerplate.`;
@@ -204,19 +217,15 @@ Generate authentic, engaging content aligned with the brand voice.`;
             copyPrompt = state.input;
         }
 
-        state.loadingStage = 'Crafting your copy with Claude...';
+        state.loadingStage = 'Crafting your copy...';
         render();
-        const copy = await generateCopyWithClaude(copyPrompt);
+        const copy = await generateCopyWithGroq(copyPrompt);
 
         let imageUrl = null;
         if (showPlatformOptions && imageSpec) {
-          state.loadingStage = 'Creating your image with Gemini...';
+          state.loadingStage = 'Creating your image...';
           render();
-          try {
-            imageUrl = await generateImageWithGemini(`Professional social media image for: ${state.input}. Style: modern, clean, for ${state.platform} ${state.format}.`);
-          } catch (imgError) {
-            console.error('Image generation failed:', imgError);
-          }
+          imageUrl = generateImageWithPollinations(`Professional social media image for: ${state.input}. For ${state.platform} ${state.format}.`);
         }
 
         state.generated = { copy, imageUrl, imageSpec, platform: state.platform, format: state.format, contentType: state.contentType };
@@ -248,6 +257,7 @@ Generate authentic, engaging content aligned with the brand voice.`;
         const link = document.createElement('a');
         link.href = state.generated.imageUrl;
         link.download = `${state.platform}-${state.format.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.png`;
+        link.target = '_blank';
         link.click();
       }
     }
@@ -325,13 +335,18 @@ Generate authentic, engaging content aligned with the brand voice.`;
                 </div>
                 <div class="flex justify-center">
                   ${g.imageUrl ? `
-                    <img src="${g.imageUrl}" alt="Generated" class="rounded-xl max-w-full shadow-lg" style="max-height: 280px; object-fit: contain;" />
+                    <img src="${g.imageUrl}" alt="Generated" class="rounded-xl max-w-full shadow-lg" style="max-height: 280px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <div class="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-xl items-center justify-center text-white hidden" style="width: 250px; height: 250px;">
+                      <div class="text-center p-4">
+                        <svg class="w-8 h-8 mx-auto mb-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                        <p class="text-xs opacity-80">Image loading...</p>
+                      </div>
+                    </div>
                   ` : `
-                    <div class="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-xl flex items-center justify-center text-white" style="width: 250px; height: ${g.imageSpec.ratio === '1:1' ? '250px' : g.imageSpec.ratio === '4:5' ? '312px' : '140px'}">
+                    <div class="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-xl flex items-center justify-center text-white" style="width: 250px; height: 250px;">
                       <div class="text-center p-4">
                         <svg class="w-8 h-8 mx-auto mb-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                         <p class="text-xs opacity-80">Image unavailable</p>
-                        <p class="text-xs opacity-60">${g.imageSpec.w}×${g.imageSpec.h}</p>
                       </div>
                     </div>
                   `}
@@ -375,7 +390,7 @@ Generate authentic, engaging content aligned with the brand voice.`;
             <div class="flex flex-wrap gap-2 justify-center">
               <span class="text-xs text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full font-medium">${showPlatformOptions ? `${state.format} for ${state.platform}` : state.contentType}</span>
               ${state.brandData.tov.length > 0 ? `<span class="text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full font-medium">${state.brandData.tov.length} voice styles</span>` : ''}
-              ${state.brandData.colors.length > 0 ? `<span class="text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-medium">${state.brandData.colors.length} colors</span>` : ''}
+              ${state.brandData.imageBank.length > 0 ? `<span class="text-xs text-pink-600 bg-pink-50 px-3 py-1.5 rounded-full font-medium">${state.brandData.imageBank.length} image styles</span>` : ''}
             </div>
           </div>
         `;
@@ -424,7 +439,7 @@ Generate authentic, engaging content aligned with the brand voice.`;
             <div class="bg-white/80 backdrop-blur-xl border-t border-slate-200/50 p-4">
               <div class="flex gap-3">
                 <input type="text" id="promptInput" value="${state.input}" oninput="state.input = this.value" onkeypress="if(event.key === 'Enter') generate()" placeholder="Describe what content you need..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm" />
-                <button onclick="generate()" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-pink-700 disabled:from-slate-300 disabled:to-slate-300 shadow-lg">Generate</button>
+                <button onclick="generate()" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg">Generate</button>
               </div>
             </div>
           ` : ''}
